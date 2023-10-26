@@ -899,7 +899,7 @@ HRESULT WINAPI CustomCoCreateInstance(REFCLSID rclsid, LPUNKNOWN pUnkOuter, DWOR
     else if (rclsid == CLSID_WinInet)
         hDll = ::LoadLibrary(L"wininet.dll");
 
-    if (hDll == NULL)
+    if (hDll == NULL || GetProcAddress(hDll, "IsUltimateASILoader") != NULL)
         return ::CoCreateInstance(rclsid, pUnkOuter, dwClsContext, riid, ppv);
 
     typedef HRESULT(__stdcall *pDllGetClassObject)(IN REFCLSID rclsid, IN REFIID riid, OUT LPVOID FAR* ppv);
@@ -1157,6 +1157,9 @@ bool HookKernel32IAT(HMODULE mod, bool exe)
 
     auto PatchCoCreateInstance = [&](size_t start, size_t end, size_t exe_end)
     {
+        if (iequals(GetSelfName(), L"dinput8.dll") || iequals(GetSelfName(), L"dinput.dll") || iequals(GetSelfName(), L"wininet.dll"))
+            return;
+
         for (size_t i = 0; i < nNumImports; i++)
         {
             if (hExecutableInstance + (pImports + i)->FirstThunk > start && !(end && hExecutableInstance + (pImports + i)->FirstThunk > end))
